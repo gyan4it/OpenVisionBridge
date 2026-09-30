@@ -3,7 +3,7 @@
 > **A lightweight, modular visual perception bridge that enables non-vision AI models to reason over images through structured visual representations.**
 
 [![Status](https://img.shields.io/badge/status-architecture%20baseline-blue)](#project-status)
-[![License](https://img.shields.io/badge/license-MIT-green)](#license)
+[![License](https://img.shields.io/badge/license-OpenVisionBridge%20Community%20License-blue)](#license)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#technology-direction)
 [![Local First](https://img.shields.io/badge/local--first-yes-success)](#design-principles)
 
@@ -11,7 +11,7 @@
 
 ## 1. What is OpenVisionBridge?
 
-**OpenVisionBridge** is an open-source, model-agnostic visual perception layer designed to connect images with AI models that do not have native vision capabilities.
+**OpenVisionBridge** is a source-available, model-agnostic visual perception layer designed to connect images with AI models that do not have native vision capabilities.
 
 A text-only AI model cannot directly understand raw image pixels.
 
@@ -21,9 +21,9 @@ OpenVisionBridge addresses this by transforming visual information into a struct
                     IMAGE
                       |
                       v
-              +---------------+
+              +----------------+
               | OpenVisionBridge|
-              +-------+-------+
+              +-------+--------+
                       |
         +-------------+-------------+
         |             |             |
@@ -56,12 +56,12 @@ Instead, it provides the model with **structured visual evidence**.
 
 # 2. The Problem
 
-Many local and lightweight AI models are excellent at reasoning over text but cannot directly process images.
+Many local and lightweight AI models are capable of reasoning over text but cannot directly process images.
 
-A common workaround is:
+A simplistic approach is:
 
 ```text
-IMAGE -> mathematical statistics -> LLM
+IMAGE -> mathematical statistics -> AI
 ```
 
 For example:
@@ -103,7 +103,7 @@ The central design principle is:
 
 > **Do not force a text AI model to understand pixels. Convert pixels into structured, confidence-aware visual evidence first.**
 
-The core data contract is the **Visual Intermediate Representation (VIR)**.
+The central data contract is the **Visual Intermediate Representation (VIR)**.
 
 Example:
 
@@ -267,7 +267,7 @@ UNCERTAIN
 
 ### 5.6 No Fabrication
 
-If the visual evidence is insufficient, the system must say so.
+If visual evidence is insufficient, the system must say so.
 
 It must never invent visual facts simply to produce an answer.
 
@@ -410,35 +410,6 @@ Image
 └── uncertainties
 ```
 
-Example:
-
-```json
-{
-  "schema_version": "1.0",
-  "image": {
-    "width": 1920,
-    "height": 1080
-  },
-  "text": [
-    {
-      "id": "txt_001",
-      "content": "Calculate velocity",
-      "bbox": [100, 120, 600, 170],
-      "confidence": 0.96
-    }
-  ],
-  "shapes": [
-    {
-      "id": "shape_001",
-      "type": "triangle",
-      "confidence": 0.93
-    }
-  ],
-  "relationships": [],
-  "uncertainties": []
-}
-```
-
 A formal JSON Schema will be maintained under:
 
 ```text
@@ -464,19 +435,6 @@ Confidence is an estimate, not automatically a calibrated probability.
 
 Evidence should also record its source.
 
-Example:
-
-```json
-{
-  "fact": "triangle",
-  "confidence": 0.93,
-  "source": {
-    "engine": "geometry_engine",
-    "method": "polygon_detection"
-  }
-}
-```
-
 Possible evidence sources include:
 
 ```text
@@ -496,7 +454,7 @@ DERIVED
 
 One of the most important features is **question-guided perception**.
 
-Instead of analyzing everything:
+Instead of:
 
 ```text
 IMAGE
@@ -553,20 +511,6 @@ This reduces:
 
 OpenVisionBridge can convert coordinates into symbolic relationships.
 
-Example:
-
-```text
-Object A = [100,100,200,200]
-Object B = [300,100,400,200]
-```
-
-Possible result:
-
-```text
-A LEFT_OF B
-A ALIGNED_Y B
-```
-
 Supported relationship vocabulary may include:
 
 ```text
@@ -612,40 +556,30 @@ This allows a language model to reason over relationships instead of raw pixels.
 
 # 13. Example Workflow
 
-Suppose the image contains:
+Suppose an image contains a triangle above a circle.
 
-```text
-        A
-
-       /\
-      /  \
-     /____\
-
-       ○
-```
-
-The bridge might produce:
+The bridge may produce:
 
 ```json
 {
-  "text": [
-    {
-      "content": "A"
-    }
-  ],
   "shapes": [
     {
-      "type": "triangle"
+      "id": "shape_001",
+      "type": "triangle",
+      "confidence": 0.93
     },
     {
-      "type": "circle"
+      "id": "shape_002",
+      "type": "circle",
+      "confidence": 0.91
     }
   ],
   "relationships": [
     {
-      "subject": "triangle",
+      "subject": "shape_001",
       "relation": "ABOVE",
-      "object": "circle"
+      "object": "shape_002",
+      "confidence": 0.93
     }
   ]
 }
@@ -706,7 +640,7 @@ OpenVisionBridge/
 │
 ├── VISION_BRIDGE_ARCHITECTURE.md
 ├── README.md
-├── LICENSE
+├── LICENSE.md
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
 └── SECURITY.md
@@ -715,8 +649,6 @@ OpenVisionBridge/
 ---
 
 # 15. Technology Direction
-
-The project is intentionally technology-flexible.
 
 A lightweight first implementation may use:
 
@@ -814,26 +746,13 @@ Visual Context
 Ollama / Local SLM
 ```
 
-The reasoning model should receive an explicit instruction such as:
-
-```text
-You are receiving structured visual evidence.
-
-You did not directly inspect the image.
-
-Use only the supplied visual evidence.
-
-Distinguish detected facts from derived relationships and uncertain interpretations.
-
-If the required evidence is missing, state that it is missing.
-Do not invent visual details.
-```
+The reasoning model should receive an explicit instruction that it is reasoning from structured visual evidence and must not invent missing visual information.
 
 ---
 
 # 18. Compatibility Philosophy
 
-OpenVisionBridge should work as an interoperability layer rather than as a replacement for every vision technology.
+OpenVisionBridge is intended as an interoperability layer rather than a replacement for every vision technology.
 
 ```text
                +------------------+
@@ -853,8 +772,6 @@ OpenVisionBridge should work as an interoperability layer rather than as a repla
                          v
                   Reasoning Model
 ```
-
-This makes perception components replaceable.
 
 ---
 
@@ -953,7 +870,7 @@ OpenVisionBridge is not intended to compete directly with:
 - multimodal LLMs;
 - vision foundation models.
 
-Instead, it attempts to solve a different interoperability problem:
+Instead, it addresses an interoperability problem:
 
 > **How can different visual perception systems communicate structured visual evidence to AI reasoning systems through a common representation?**
 
@@ -1039,21 +956,13 @@ Image
 
 ---
 
-# 23. Open-Source Philosophy
+# 23. Open-Source / Source-Available Position
 
-The project is intended to be:
+OpenVisionBridge is intended to be publicly accessible source code with broad community participation.
 
-```text
-Open
-Modular
-Local-first
-Model-agnostic
-Extensible
-Evidence-aware
-Community-driven
-```
+The project permits non-commercial use under the terms of the accompanying license and provides a framework for commercial licensing.
 
-The goal is to make visual information easier to consume across different AI systems.
+Because the project-specific license includes conditions that are different from standard permissive open-source licenses, the project should be described as **source-available / community-licensed** rather than claiming that it is OSI-approved open-source software.
 
 ---
 
@@ -1075,15 +984,15 @@ Potential contribution areas:
 - testing;
 - optimization.
 
-Before contributing a new perception component, contributors should document:
+Contributors should document:
 
-1. What visual evidence it extracts.
+1. What visual evidence the contribution extracts.
 2. Expected input.
 3. Output format.
 4. Confidence behavior.
 5. Failure modes.
 6. Dependencies.
-7. License.
+7. Applicable license.
 8. Resource requirements.
 
 See:
@@ -1098,7 +1007,7 @@ for the complete contribution process.
 
 # 25. Third-Party Components
 
-OpenVisionBridge may integrate with external open-source projects.
+OpenVisionBridge may integrate with third-party software, datasets, models, libraries, or other materials.
 
 Examples may include:
 
@@ -1113,29 +1022,39 @@ YOLO
 
 These projects are independent of OpenVisionBridge and retain their respective licenses.
 
-Before distributing a bundled release, verify the license compatibility and attribution requirements of every dependency and model.
+This project's license does not override the license of third-party components.
+
+Users are responsible for complying with applicable third-party licensing and usage conditions.
 
 ---
 
 # 26. License
 
-The intended license for the OpenVisionBridge source code is:
+OpenVisionBridge is distributed under the:
 
-**MIT License**
+**OpenVisionBridge Community and Attribution License v1.0**
 
-The repository should contain the complete license text in:
+The license is designed to permit broad personal, educational, academic, research, experimental, and other non-commercial use while preserving attribution, project identity, copyright ownership, and a separate commercial licensing framework.
 
-```text
-LICENSE
-```
+Commercial use of the Software or a Derivative Work substantially based on it requires a separate commercial-use arrangement unless expressly authorized otherwise in writing.
 
-Third-party dependencies and model weights may have different licenses.
-
-Those licenses remain applicable to their respective components.
+See the complete [LICENSE.md](LICENSE.md) for the applicable terms.
 
 ---
 
-# 27. Project Status
+# 27. Copyright and Project Ownership
+
+The original OpenVisionBridge architecture, specifications, documentation, schemas, and original implementation remain protected by their respective copyright holders.
+
+Gyan is recognized as the principal creator and initiating maintainer of the OpenVisionBridge project.
+
+Community contributors retain rights in their original contributions to the extent provided by applicable law and the project's contribution terms.
+
+The project may maintain a contributor registry and release acknowledgements.
+
+---
+
+# 28. Project Status
 
 Current status:
 
@@ -1145,17 +1064,17 @@ ARCHITECTURE BASELINE
 
 The architecture has been defined.
 
-The implementation is expected to proceed incrementally rather than attempting to build a complete general-purpose vision system in one step.
+Implementation is expected to proceed incrementally rather than attempting to build a complete general-purpose vision system in one step.
 
 ---
 
-# 28. Guiding Principle
+# 29. Guiding Principle
 
 The project can be summarized in one sentence:
 
 > **OpenVisionBridge converts visual evidence into structured information so that AI systems can reason about images without requiring every AI model to process raw pixels itself.**
 
-And the fundamental pipeline is:
+The fundamental pipeline is:
 
 ```text
              IMAGE
@@ -1191,7 +1110,7 @@ And the fundamental pipeline is:
 **Implementation:** Planned  
 **VIR Schema:** To be formalized  
 **API:** To be finalized  
-**License:** MIT intended for project code  
+**License:** OpenVisionBridge Community and Attribution License v1.0  
 **Primary Language:** Python (initial implementation direction)  
 **Design:** Local-first, modular, model-agnostic
 
